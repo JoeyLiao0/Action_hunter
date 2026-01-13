@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' data:;">
+  <title>ActionHunter</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- 头部 -->
+    <header class="app-header">
+      <div>
+        <h1 class="app-title">ActionHunter</h1>
+        <div class="app-subtitle">操作录制 & 文档生成工具</div>
+      </div>
+      <div class="status-indicator" id="statusIndicator">
+        <span class="status-dot"></span>
+        <span class="status-text">就绪</span>
+      </div>
+    </header>
+
+    <!-- 主要功能区 -->
+    <main class="main-content">
+      <!-- 缓存区（首页） -->
+      <section class="section" id="cacheSection">
+        <h2 class="section-title">📦 项目缓存区</h2>
+        <p class="section-desc">在缓存区创建或导入项目，编辑完成后可随时导出文档</p>
+        
+        <div class="cache-actions">
+          <input 
+            type="text" 
+            id="projectNameInput" 
+            class="project-input" 
+            placeholder="输入项目名称..."
+            maxlength="100"
+          />
+          <button class="primary-btn" id="createProjectBtn">
+            ➕ 新建项目
+          </button>
+          <button class="secondary-btn" id="importProjectBtn">
+            📂 导入项目
+          </button>
+        </div>
+        
+        <!-- 快捷键提示（缓存区） -->
+        <div class="shortcuts-hint">
+          💡 快捷键提示：打开项目后，可使用
+          <span class="shortcut-item"><kbd>⌘/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>1/2/3</kbd></span>
+          快速添加截图/视频/文字
+        </div>
+        
+        <!-- 缓存区项目列表 -->
+        <div class="cache-projects-section">
+          <h3 class="cache-projects-title">当前缓存的项目</h3>
+          <div class="cache-projects-list" id="cacheProjectsList">
+            <div class="empty-state">暂无项目，请新建或导入项目</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 录制控制区 -->
+      <section class="section hidden" id="recordingSection">
+        <div class="section-header">
+          <button class="back-btn" id="backToHomeBtn">
+            ← 返回
+          </button>
+          <div class="section-header-content">
+            <h2 class="section-title">🎬 录制步骤</h2>
+            <div class="project-info">
+              <strong id="currentProjectName"></strong>
+              <span class="step-count" id="stepCount">0 个步骤</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="action-buttons">
+          <div class="action-group screenshot-group">
+            <button class="action-btn screenshot-btn" id="addScreenshotBtn">
+              📸 截图
+            </button>
+            <button class="action-btn import-btn" id="importImageBtn">
+              🖼️ 导入
+            </button>
+          </div>
+          <div class="action-group video-group">
+            <button class="action-btn video-btn" id="addVideoBtn">
+              🎬 录制 (30s)
+            </button>
+            <button class="action-btn import-btn" id="importVideoBtn">
+              🎥 导入
+            </button>
+          </div>
+          <button class="action-btn text-btn" id="addTextBtn">
+            📝 添加文字说明
+          </button>
+        </div>
+        
+        <!-- 快捷键提示 -->
+        <div class="shortcuts-hint">
+          💡 快捷键：
+          <span class="shortcut-item"><kbd>⌘/Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>1</kbd> 截图</span>
+          <span class="shortcut-item"><kbd>⌘/Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>2</kbd> 录屏</span>
+          <span class="shortcut-item"><kbd>⌘/Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>3</kbd> 文字</span>
+          <span class="shortcut-item"><kbd>⌘/Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd> 显示/隐藏</span>
+        </div>
+
+        <!-- 步骤列表 -->
+        <div class="steps-container">
+          <h3 class="steps-title">已录制步骤</h3>
+          <div class="steps-list" id="stepsList">
+            <div class="empty-state">暂无步骤，点击上方按钮开始录制</div>
+          </div>
+        </div>
+
+        <!-- 导出按钮 -->
+        <div class="export-section">
+          <button class="primary-btn" id="exportDocBtn">
+            📤 导出文档
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- 模态框：选择屏幕源 -->
+    <div class="modal" id="sourceModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">选择屏幕或窗口</h3>
+          <button class="modal-close" id="sourceModalClose">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="source-grid" id="sourceGrid">
+            <div class="loading">正在获取屏幕源...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 模态框：输入说明 -->
+    <div class="modal" id="descriptionModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">输入说明</h3>
+          <button class="modal-close" id="descriptionModalClose">&times;</button>
+        </div>
+        <div class="modal-body">
+          <textarea 
+            id="descriptionInput" 
+            class="description-input" 
+            placeholder="请输入这个步骤的说明..."
+            rows="4"
+          ></textarea>
+          <div class="modal-actions">
+            <button class="secondary-btn" id="descriptionCancel">取消</button>
+            <button class="primary-btn" id="descriptionConfirm">确认</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 模态框：文字说明 -->
+    <div class="modal" id="textModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>添加文字说明</h3>
+          <button class="modal-close" id="textModalClose">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="textTitleInput" class="form-label">标题（可选）</label>
+            <input 
+              type="text" 
+              id="textTitleInput" 
+              class="text-input" 
+              placeholder="例如：注意事项、前置条件等..."
+              maxlength="100"
+            />
+          </div>
+          <div class="form-group">
+            <label for="textContentInput" class="form-label">内容 <span class="required">*</span></label>
+            <textarea 
+              id="textContentInput" 
+              class="text-textarea" 
+              placeholder="请输入文字说明内容..."
+              rows="6"
+            ></textarea>
+          </div>
+          <div class="modal-actions">
+            <button class="secondary-btn" id="textCancel">取消</button>
+            <button class="primary-btn" id="textConfirm">确认</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 模态框：录制倒计时 -->
+    <div class="modal" id="countdownModal">
+      <div class="modal-content countdown-content">
+        <div class="countdown-display">
+          <div class="countdown-number" id="countdownNumber">3</div>
+          <div class="countdown-text">录制即将开始...</div>
+          <button class="skip-countdown-btn" id="skipCountdownBtn">跳过 (Enter)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 模态框：录制进行中 -->
+    <div class="modal" id="recordingModal">
+      <div class="modal-content recording-content">
+        <div class="recording-display">
+          <div class="recording-indicator">🔴 录制中</div>
+          <div class="recording-timer" id="recordingTimer">00:00</div>
+          <div class="recording-progress">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+          <div class="recording-hint">最多录制30秒，可提前结束</div>
+          <button class="stop-recording-btn" id="stopRecordingBtn">停止录制</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 模态框：预览 -->
+    <div class="modal" id="previewModal">
+      <div class="modal-content large">
+        <div class="modal-header">
+          <h3 class="modal-title">预览</h3>
+          <button class="modal-close" id="previewModalClose">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="previewContainer"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

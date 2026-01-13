@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ActionHunter</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      overflow: hidden;
+    }
+    
+    .floating-btn {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: move;
+      box-shadow: 0 4px 16px rgba(52, 152, 219, 0.4);
+      transition: box-shadow 0.3s ease;
+      border: 3px solid white;
+      user-select: none;
+    }
+    
+    .floating-btn:hover {
+      box-shadow: 0 6px 20px rgba(52, 152, 219, 0.6);
+    }
+    
+    .floating-btn:active {
+      cursor: grabbing;
+    }
+    
+    .floating-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(52, 152, 219, 0.6);
+    }
+    
+    .floating-btn:active {
+      transform: scale(0.95);
+    }
+    
+    .icon {
+      font-size: 24px;
+      color: white;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="floating-btn" id="floatingBtn">
+    <div class="icon">🎯</div>
+  </div>
+  
+  <script>
+    const btn = document.getElementById('floatingBtn');
+    
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let hasMoved = false;
+    
+    btn.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      hasMoved = false;
+      startX = e.screenX;
+      startY = e.screenY;
+      e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const deltaX = e.screenX - startX;
+        const deltaY = e.screenY - startY;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        // 如果移动距离超过5px，认为是拖拽
+        if (distance > 5) {
+          hasMoved = true;
+          window.electronAPI.moveFloatingWindow(deltaX, deltaY);
+          startX = e.screenX;
+          startY = e.screenY;
+        }
+      }
+    });
+    
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        
+        // 如果没有移动，认为是点击
+        if (!hasMoved) {
+          window.electronAPI.showMainWindow();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
